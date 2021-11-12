@@ -1,4 +1,4 @@
-package com.example.weatherapp321.bean;
+package com.example.tianqiyubao.bean;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -48,3 +48,4 @@ public class OtherTipsBean implements Serializable {
                 '}';
     }
 }
+

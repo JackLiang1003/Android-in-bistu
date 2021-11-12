@@ -1,5 +1,4 @@
-package com.example.weatherapp321.adapter;
-
+package com.example.tianqiyubao.adapter;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,10 +8,12 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.weatherapp321.R;
-import com.example.weatherapp321.bean.OtherTipsBean;
+
+import com.example.tianqiyubao.R;
+import com.example.tianqiyubao.bean.OtherTipsBean;
 
 import java.util.List;
+
 
 public class TipsAdapter extends RecyclerView.Adapter<TipsAdapter.TipsViewHolder> {
     private Context mContext;
@@ -57,3 +58,4 @@ public class TipsAdapter extends RecyclerView.Adapter<TipsAdapter.TipsViewHolder
         }
     }
 }
+

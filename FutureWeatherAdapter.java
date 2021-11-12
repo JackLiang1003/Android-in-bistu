@@ -1,6 +1,8 @@
-package com.example.weatherapp321.adapter;
+package com.example.tianqiyubao.adapter;
 
 import android.content.Context;
+import android.content.Intent;
+import android.text.Layout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,8 +12,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.weatherapp321.R;
-import com.example.weatherapp321.bean.DayWeatherBean;
+import com.example.tianqiyubao.R;
+import com.example.tianqiyubao.bean.DayWeatherBean;
 
 import java.util.List;
 

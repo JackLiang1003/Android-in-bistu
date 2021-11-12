@@ -1,4 +1,7 @@
-package com.example.weatherapp321;
+package com.example.tianqiyubao;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatSpinner;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -7,8 +10,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Intent;
 import android.os.Bundle;
 
-import com.example.weatherapp321.adapter.TipsAdapter;
-import com.example.weatherapp321.bean.DayWeatherBean;
+import com.example.tianqiyubao.adapter.TipsAdapter;
+import com.example.tianqiyubao.bean.DayWeatherBean;
+
 
 public class TipsActivity extends AppCompatActivity {
 

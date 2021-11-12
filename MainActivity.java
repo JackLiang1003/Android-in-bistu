@@ -1,275 +1,205 @@
-package com.example.caculator;
+package com.example.tianqiyubao;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.databinding.DataBindingUtil;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
+import androidx.appcompat.widget.AppCompatSpinner;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
 import android.view.View;
-import com.example.caculator.databinding.ActivityMainBinding;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.example.tianqiyubao.adapter.FutureWeatherAdapter;
+import com.example.tianqiyubao.bean.DayWeatherBean;
+import com.example.tianqiyubao.bean.WeatherBean;
+import com.example.tianqiyubao.util.NetUtil;
+import com.google.gson.Gson;
+
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
-    private ActivityMainBinding binding;
-    private MyViewModel myViewModel;
+
+    private AppCompatSpinner mSpinner;
+    private ArrayAdapter<String> mSpAdapter;
+    private String[] mCities;
+
+    private TextView tvWeather,tvTem,tvTemLowHigh,tvWin,tvAir;
+    private ImageView ivWeather;
+    private RecyclerView rlvFutureWeather;
+    private FutureWeatherAdapter mWeatherAdapter;
+
+    private DayWeatherBean todayWeather;
+
+    private Handler mHandler = new Handler(Looper.myLooper()){
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            if (msg.what == 0) {
+                String weather = (String) msg.obj;
+                Log.d("fan", "--主线程收到了天气数据-weather---" + weather);
+
+                Gson gson = new Gson();
+                WeatherBean weatherBean = gson.fromJson(weather, WeatherBean.class);
+                Log.d("fan", "--解析后的数据-weather---" + weatherBean.toString());
+
+                updateUiOfWeather(weatherBean);
+
+                Toast.makeText(MainActivity.this,"更新天气~",Toast.LENGTH_SHORT).show();
+
+            }
+
+        }
+    };
+
+    private void updateUiOfWeather(WeatherBean weatherBean) {
+        if (weatherBean == null) {
+            return;
+        }
+
+        List<DayWeatherBean> dayWeathers = weatherBean.getDayWeathers();
+        todayWeather = dayWeathers.get(0);
+        if (todayWeather == null) {
+            return;
+        }
+
+        tvTem.setText(todayWeather.getTem());
+        tvWeather.setText(todayWeather.getWea()+"("+todayWeather.getDate()+todayWeather.getWeek()+")");
+        tvTemLowHigh.setText(todayWeather.getTem2() + "~" + todayWeather.getTem1());
+        tvWin.setText(todayWeather.getWin()[0] + todayWeather.getWinSpeed());
+        tvAir.setText("空气:" + todayWeather.getAir() + todayWeather.getAirLevel() + "\n" + todayWeather.getAirTips());
+        ivWeather.setImageResource(getImgResOfWeather(todayWeather.getWeaImg()));
+
+        dayWeathers.remove(0); // 去掉当天的天气
+
+        // 未来天气的展示
+        mWeatherAdapter = new FutureWeatherAdapter(this, dayWeathers);
+        rlvFutureWeather.setAdapter(mWeatherAdapter);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        rlvFutureWeather.setLayoutManager(layoutManager);
+
+    }
+
+    private int getImgResOfWeather(String weaStr) {
+        // xue、lei、shachen、wu、bingbao、yun、yu、yin、qing
+        int result = 0;
+        switch (weaStr) {
+            case "qing":
+                result = R.drawable.biz_plugin_weather_qing;
+                break;
+            case "yin":
+                result = R.drawable.biz_plugin_weather_yin;
+                break;
+            case "yu":
+                result = R.drawable.biz_plugin_weather_dayu;
+                break;
+            case "yun":
+                result = R.drawable.biz_plugin_weather_duoyun;
+                break;
+            case "bingbao":
+                result = R.drawable.biz_plugin_weather_leizhenyubingbao;
+                break;
+            case "wu":
+                result = R.drawable.biz_plugin_weather_wu;
+                break;
+            case "shachen":
+                result = R.drawable.biz_plugin_weather_shachenbao;
+                break;
+            case "lei":
+                result = R.drawable.biz_plugin_weather_leizhenyu;
+                break;
+            case "xue":
+                result = R.drawable.biz_plugin_weather_daxue;
+                break;
+            default:
+                result = R.drawable.biz_plugin_weather_qing;
+                break;
+        }
+
+        return result;
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_main);
-        binding = DataBindingUtil.setContentView(this,R.layout.activity_main);
-        myViewModel = new ViewModelProvider(this,new ViewModelProvider.NewInstanceFactory()).get(MyViewModel.class);
-        //获取数据类型
-        myViewModel.getMainNum().observe(this, new Observer<String>() {//事件监听
-            @Override
-            public void onChanged(String s) {
-                binding.myTextView.setText(myViewModel.getMainNum().getValue());//让myTextView显示mainNum的数据
-                //让TextView显示算子
-                if (myViewModel.sign2.equals("")){
-                if (myViewModel.sign1.equals("")){
-                binding.textView.setText(myViewModel.getMainNum().getValue());
-            }else {//a+b
-                   binding.textView.setText(myViewModel.num[0]+myViewModel.sign1+myViewModel.getMainNum().getValue());
-                }
-            }else {
-                binding.textView.setText(myViewModel.num[0]+myViewModel.sign1+myViewModel.num[1]+myViewModel.sign2+myViewModel.getMainNum().getValue());
-                }
-            }
-        });
-        //-----------------------------------------------------------------------------
-        binding.button10.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myViewModel.setMainNum("0");
-            }
-        });
-        binding.button20.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myViewModel.setMainNum("1");
-            }
-        });
-        binding.button2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myViewModel.setMainNum("2");
-            }
-        });
-        binding.button3.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myViewModel.setMainNum("3");
-            }
-        });
-        binding.button4.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myViewModel.setMainNum("4");
-            }
-        });
-        binding.button5.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myViewModel.setMainNum("5");
-            }
-        });
-        binding.button6.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myViewModel.setMainNum("6");
-            }
-        });
-        binding.button7.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myViewModel.setMainNum("7");
-            }
-        });
-        binding.button8.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myViewModel.setMainNum("8");
-            }
-        });
-        binding.button9.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myViewModel.setMainNum("9");
-            }
-        });
-        binding.button17.setOnClickListener(new View.OnClickListener() {//小数点按钮
-            @Override
-            public void onClick(View v) {
-                if (!myViewModel.havePoint){
-                    myViewModel.getMainNum().setValue(myViewModel.getMainNum().getValue()+".");
-                    myViewModel.havePoint = true;
-                }
-            }
-        });
-        binding.button11.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (myViewModel.sign1.equals("")){
-                    myViewModel.sign1="+";
-                    myViewModel.num[0] = myViewModel.getMainNum().getValue();
-                    myViewModel.getMainNum().setValue("0");
-                    myViewModel.havePoint = false;
-                }else if (myViewModel.sign2.equals("")){
-                    //如果是像a+b这种形式的式子
-                    myViewModel.num[0] = myViewModel.mainNumWithNum_0_Total();
-                    myViewModel.sign1 = "+";
-                    myViewModel.getMainNum().setValue("0");
-                    myViewModel.havePoint =false;
-                }else {
-                    //a+b*c
-                    myViewModel.getMainNum().setValue(myViewModel.mainNumwithNum_1_tocal());
-                    myViewModel.sign2 = "";
-                    myViewModel.num[1] = "";
-                    myViewModel.num[0] = myViewModel.mainNumWithNum_0_Total();
-                    myViewModel.sign1 = "+";
-                    myViewModel.getMainNum().setValue("0");
-                    myViewModel.havePoint = false;
-                }
-            }
-        });
-        //减法按钮的监听
-        binding.button13.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (myViewModel.sign1.equals("")){
-                    myViewModel.sign1="-";
-                    myViewModel.num[0] = myViewModel.getMainNum().getValue();
-                    myViewModel.getMainNum().setValue("0");
-                    myViewModel.havePoint = false;
-                }else if (myViewModel.sign2.equals("")){
-                    //如果是像a-b这种形式的式子
-                    myViewModel.num[0] = myViewModel.mainNumWithNum_0_Total();
-                    myViewModel.sign1 = "-";
-                    myViewModel.getMainNum().setValue("0");
-                    myViewModel.havePoint =false;
-                }else {
-                    //a+b*c
-                    myViewModel.getMainNum().setValue(myViewModel.mainNumwithNum_1_tocal());
-                    myViewModel.sign2 = "";
-                    myViewModel.num[1] = "";
-                    myViewModel.num[0] = myViewModel.mainNumWithNum_0_Total();
-                    myViewModel.sign1 = "-";
-                    myViewModel.getMainNum().setValue("0");
-                    myViewModel.havePoint = false;
-                }
-            }
-        });
-        //乘法按钮的监听
-        binding.button12.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (myViewModel.sign1.equals("")){
-                    myViewModel.sign1 = "*";
-                    myViewModel.num[0] = myViewModel.getMainNum().getValue();
-                    myViewModel.getMainNum().setValue("0");
-                    myViewModel.havePoint=false;
-                }else if (myViewModel.sign2.equals("")){
-                    if (myViewModel.sign1.equals("*")||myViewModel.sign1.equals("/")){
-                        //按顺序进行计算
-                        myViewModel.num[0] = myViewModel.mainNumWithNum_0_Total();
-                        myViewModel.sign1 = "*";
-                        myViewModel.getMainNum().setValue("0");
-                        myViewModel.havePoint = false;
-                    }else {
-                        myViewModel.num[1] = myViewModel.getMainNum().getValue();
-                        myViewModel.sign2 = "*";
-                        myViewModel.getMainNum().setValue("0");
-                        myViewModel.havePoint = false;
-                    }
-                }else{
-                    //如果是a+b*c这种模式
-                    myViewModel.num[1] = myViewModel.mainNumwithNum_1_tocal();
-                    myViewModel.sign2 = "*";
-                    myViewModel.getMainNum().setValue("0");
-                    myViewModel.havePoint = false;
+        setContentView(R.layout.activity_main);
 
-                }
-            }
-        });
-        binding.button14.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (myViewModel.sign1.equals("")){
-                    myViewModel.sign1 = "/";
-                    myViewModel.num[0] = myViewModel.getMainNum().getValue();
-                    myViewModel.getMainNum().setValue("0");
-                    myViewModel.havePoint=false;
-                }else if (myViewModel.sign2.equals("")){
-                    if (myViewModel.sign1.equals("*")||myViewModel.sign1.equals("/")){
-                        //按顺序进行计算
-                        myViewModel.num[0] = myViewModel.mainNumWithNum_0_Total();
-                        myViewModel.sign1 = "/";
-                        myViewModel.getMainNum().setValue("0");
-                        myViewModel.havePoint = false;
-                    }else {
-                        myViewModel.num[1] = myViewModel.getMainNum().getValue();
-                        myViewModel.sign2 = "/";
-                        myViewModel.getMainNum().setValue("0");
-                        myViewModel.havePoint = false;
-                    }
-                }else{
-                    //如果是a+b*c这种模式
-                    myViewModel.num[1] = myViewModel.mainNumwithNum_1_tocal();
-                    myViewModel.sign2 = "/";
-                    myViewModel.getMainNum().setValue("0");
-                    myViewModel.havePoint = false;
+        initView();
+        initEvent();
+    }
 
-                }
+    private void initEvent() {
+
+    }
+
+    private void initView() {
+
+        mSpinner = findViewById(R.id.sp_city);
+        mCities = getResources().getStringArray(R.array.cities);
+        mSpAdapter = new ArrayAdapter<>(this,R.layout.sp_item_layout,mCities);
+        mSpinner.setAdapter(mSpAdapter);
+        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedCity = mCities[position];
+
+                getWeatherOfCity(selectedCity);
+
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
             }
         });
-        binding.button15.setOnClickListener(new View.OnClickListener() {//清零
+
+        tvWeather = findViewById(R.id.tv_weather);
+        tvAir = findViewById(R.id.tv_air);
+        tvTem = findViewById(R.id.tv_tem);
+        tvTemLowHigh = findViewById(R.id.tv_tem_low_high);
+        tvWin = findViewById(R.id.tv_win);
+        ivWeather = findViewById(R.id.iv_weather);
+        rlvFutureWeather = findViewById(R.id.rlv_future_weather);
+
+        tvAir.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                myViewModel.sign2="";
-                myViewModel.num[1] = "";
-                myViewModel.sign1 = "";
-                myViewModel.num[0] = "";
-                myViewModel.getMainNum().setValue("0");
-                myViewModel.havePoint = false;
+                Intent intent = new Intent(MainActivity.this, TipsActivity.class);
+                // 将数据传递给tipsActivity
+                intent.putExtra("tips", todayWeather);
+
+                startActivity(intent);
+
             }
         });
-        binding.button21.setOnClickListener(new View.OnClickListener() {
+    }
+
+    private void getWeatherOfCity(String selectedCity) {
+        // 开启子线程，请求网络
+        new Thread(new Runnable() {
             @Override
-            public void onClick(View v) {
-                //计算功能
-                if (myViewModel.sign2.equals("")) {
-                    if (!myViewModel.sign1.equals("")){
-                        myViewModel.getMainNum().setValue(myViewModel.mainNumWithNum_0_Total());
-                        if (myViewModel.getMainNum().getValue().contains("."))
-                            myViewModel.havePoint =true;
-                        else
-                            myViewModel.havePoint = false;
-                        myViewModel.num[0] = "";
-                        myViewModel.sign1="";
-                    }
-                }else {
-                    //如果a+b*c
-                    myViewModel.getMainNum().setValue(myViewModel.mainNumwithNum_1_tocal());
-                    myViewModel.num[1] = "";
-                    myViewModel.sign2 = "";
-                    myViewModel.getMainNum().setValue(myViewModel.mainNumWithNum_0_Total());
-                    if (myViewModel.getMainNum().getValue().contains("."))
-                        myViewModel.havePoint =true;
-                    else
-                        myViewModel.havePoint = false;
-                    myViewModel.num[0] = "";
-                    myViewModel.sign1="";
-                }
-                binding.textView.setText(myViewModel.getMainNum().getValue());
+            public void run() {
+                // 请求网络
+                String weatherOfCity = NetUtil.getWeatherOfCity(selectedCity);
+                // 使用handler将数据传递给主线程
+                Message message = Message.obtain();
+                message.what = 0;
+                message.obj = weatherOfCity;
+                mHandler.sendMessage(message);
+
             }
-        });
-        binding.imageButton2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!myViewModel.getMainNum().getValue().equals("")){
-                   myViewModel.getMainNum().setValue(myViewModel.getMainNum().getValue().substring(0,myViewModel.getMainNum().getValue().length()-1));
-                    if (myViewModel.getMainNum().getValue().equals("")){
-                        myViewModel.getMainNum().setValue("0");
-                    }
-                }
-            }
-        });
+        }).start();
+
     }
 }
